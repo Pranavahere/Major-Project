@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Register User</title>
+  <style>
+    video, canvas, img { border: 1px solid #ccc; margin: 5px; }
+    #captures img { max-width: 100px; }
+  </style>
+</head>
+<body>
+  <h2>Register New User with Webcam</h2>
+
+  <form id="registerForm" method="post" enctype="multipart/form-data">
+    Name: <input type="text" name="name" required><br><br>
+
+    <video id="video" width="320" height="240" autoplay></video><br>
+    <button type="button" onclick="capture()">📸 Capture</button><br><br>
+
+    <div id="captures"></div>
+    <input type="submit" value="Register and Train">
+  </form>
+
+  <script>
+    const video = document.getElementById('video');
+    const captures = document.getElementById('captures');
+    const form = document.getElementById('registerForm');
+
+    // Start the webcam
+    navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+      video.srcObject = stream;
+    });
+
+    // Capture image
+    function capture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const dataUrl = canvas.toDataURL('image/jpeg');
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      captures.appendChild(img);
+
+      // Convert base64 to Blob and append to form
+      fetch(dataUrl)
+        .then(res => res.blob())
+        .then(blob => {
+          const fileInput = document.createElement('input');
+          fileInput.type = 'hidden';
+          fileInput.name = 'images';
+          const file = new File([blob], `capture_${Date.now()}.jpg`, { type: "image/jpeg" });
+
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          fileInput.files = dt.files;
+          form.appendChild(fileInput);
+        });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      background-color: #121212;
+      color: #f0f0f0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+    }
+    h2 {
+      color: #ffffff;
+      text-align: center;
+      margin-top: 40px;
+    }
+    a {
+      color: #4fc3f7;
+      text-decoration: none;
+      display: block;
+      margin: 5px auto;
+      width: fit-content;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .chart-container {
+      background: #1e1e1e;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px auto;
+      width: 90%;
+      max-width: 700px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    canvas {
+      background-color: #222;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>📁 Attendance Logs</h2>
+  {% for log in logs %}
+    <a href="{{ url_for('download', filename=log) }}">📄 {{ log }}</a>
+  {% endfor %}
+
+  <h2>📊 Analytics Dashboard</h2>
+
+  <div class="chart-container">
+    <canvas id="dailyChart"></canvas>
+  </div>
+  <div class="chart-container">
+    <canvas id="hourlyChart"></canvas>
+  </div>
+  <div class="chart-container">
+    <canvas id="visitorChart"></canvas>
+  </div>
+
+  <script>
+    fetch('/admin/analytics')
+      .then(res => res.json())
+      .then(data => {
+        const textColor = '#ffffff';
+
+        // Daily Check-ins Line Chart
+        const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+        new Chart(dailyCtx, {
+          type: 'line',
+          data: {
+            labels: Object.keys(data.daily_counts),
+            datasets: [{
+              label: 'Check-ins per Day',
+              data: Object.values(data.daily_counts),
+              borderColor: '#4fc3f7',
+              backgroundColor: 'transparent',
+              borderWidth: 2
+            }]
+          },
+          options: {
+            plugins: { legend: { labels: { color: textColor } } },
+            scales: {
+              x: { ticks: { color: textColor } },
+              y: { ticks: { color: textColor } }
+            }
+          }
+        });
+
+        // Hourly Check-ins Bar Chart
+        const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+        new Chart(hourlyCtx, {
+          type: 'bar',
+          data: {
+            labels: Object.keys(data.hourly_data),
+            datasets: [{
+              label: 'Check-ins by Hour',
+              data: Object.values(data.hourly_data),
+              backgroundColor: '#ffb74d'
+            }]
+          },
+          options: {
+            plugins: { legend: { labels: { color: textColor } } },
+            scales: {
+              x: { ticks: { color: textColor } },
+              y: { ticks: { color: textColor } }
+            }
+          }
+        });
+
+        // Frequent vs New Pie Chart
+        const frequentCount = Object.keys(data.frequent_visitors).length;
+        const newCount = Object.keys(data.new_visitors).length;
+        const visitorCtx = document.getElementById('visitorChart').getContext('2d');
+        new Chart(visitorCtx, {
+          type: 'pie',
+          data: {
+            labels: ['Frequent Visitors', 'New Visitors'],
+            datasets: [{
+              data: [frequentCount, newCount],
+              backgroundColor: ['#66bb6a', '#ef5350']
+            }]
+          },
+          options: {
+            plugins: {
+              legend: {
+                labels: { color: textColor }
+              }
+            }
+          }
+        });
+      });
+  </script>
+</body>
+</html>
